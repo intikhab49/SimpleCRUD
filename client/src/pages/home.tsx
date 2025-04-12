@@ -152,7 +152,7 @@ export default function Home() {
         {/* Header Section */}
         <div className="mb-8 mt-4">
           <h1 className="text-2xl font-bold text-gray-800">Items Manager</h1>
-          <p className="text-gray-600">Manage your items with simple CRUD operations</p>
+          <p className="text-gray-600">Manage your items</p>
         </div>
 
         {/* Filter and Search */}
