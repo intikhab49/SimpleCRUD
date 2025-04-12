@@ -12,7 +12,7 @@ export default function Navbar({ onCreateClick }: NavbarProps) {
           <div className="flex items-center">
             <a href="/" className="text-xl font-semibold text-primary">
               <i className="fas fa-database mr-2"></i>
-              SimpleCRUD
+              Item Manager
             </a>
           </div>
           <div className="flex items-center">
