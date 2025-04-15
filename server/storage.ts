@@ -1,4 +1,6 @@
 import { users, items, type User, type InsertUser, type Item, type InsertItem, type UpdateItem } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 // Storage interface
 export interface IStorage {
@@ -15,75 +17,65 @@ export interface IStorage {
   deleteItem(id: number): Promise<boolean>;
 }
 
-// In-memory storage implementation
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private items: Map<number, Item>;
-  private userCurrentId: number;
-  private itemCurrentId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.items = new Map();
-    this.userCurrentId = 1;
-    this.itemCurrentId = 1;
-  }
-
+// Database storage implementation
+export class DatabaseStorage implements IStorage {
   // User methods
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.userCurrentId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
 
   // Item methods
   async getItems(): Promise<Item[]> {
-    return Array.from(this.items.values());
+    return await db.select().from(items);
   }
 
   async getItem(id: number): Promise<Item | undefined> {
-    return this.items.get(id);
+    const [item] = await db.select().from(items).where(eq(items.id, id));
+    return item || undefined;
   }
 
   async createItem(insertItem: InsertItem): Promise<Item> {
-    const id = this.itemCurrentId++;
     const createdAt = new Date();
-    const item: Item = { ...insertItem, id, createdAt };
-    this.items.set(id, item);
+    const itemWithDate = { ...insertItem, createdAt };
+    const [item] = await db.insert(items).values(itemWithDate).returning();
     return item;
   }
 
   async updateItem(id: number, updateItem: UpdateItem): Promise<Item | undefined> {
-    const existingItem = this.items.get(id);
+    const [existingItem] = await db.select().from(items).where(eq(items.id, id));
     
     if (!existingItem) {
       return undefined;
     }
     
-    const updatedItem: Item = { 
-      ...existingItem,
-      name: updateItem.name,
-      description: updateItem.description
-    };
+    const [updatedItem] = await db
+      .update(items)
+      .set(updateItem)
+      .where(eq(items.id, id))
+      .returning();
     
-    this.items.set(id, updatedItem);
     return updatedItem;
   }
 
   async deleteItem(id: number): Promise<boolean> {
-    return this.items.delete(id);
+    const [deletedItem] = await db
+      .delete(items)
+      .where(eq(items.id, id))
+      .returning();
+    
+    return !!deletedItem;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
