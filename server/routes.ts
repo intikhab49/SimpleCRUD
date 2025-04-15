@@ -4,8 +4,11 @@ import { storage } from "./storage";
 import { insertItemSchema, updateItemSchema } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
+import { setupAuth } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up authentication routes
+  setupAuth(app);
   // API routes for items
   
   // Get all items
